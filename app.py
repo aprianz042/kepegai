@@ -13,10 +13,10 @@ load_dotenv()
 debug_mode = False # True / False
 
 db_connection = pymysql.connect(
-    host=os.getenv("DB_HOST"),       
-    user=os.getenv("DB_USER"),            
-    password=os.getenv("DB_GEMBOK"),   
-    database=os.getenv("DB_NYA"))
+    host=st.secrets["DB_HOST"],       
+    user=st.secrets["DB_USER"],          
+    password=st.secrets["DB_GEMBOK"], 
+    database=st.secrets["DB_NYA"]) 
 
 TAWA = "🤣"
 USER_AVATAR = "👤"
