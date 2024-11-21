@@ -133,35 +133,48 @@ for message in st.session_state.messages:
             if "gagal" in message:
                 st.error(message["gagal"])
 
-aturan=[
+aturan = [
     """
-    Anda adalah seorang ahli dalam mengubah perintah berbahasa indonesia menjadi kode query SQL!
-    Basis data MySQL nya memiliki tabel bernama pegawai dan mempunyai kolom - nip, nik, kota_lahir, 
-    tanggal_lahir, jenis_kelamin, status_pernikahan, status_kepegawaian, agama, 
-    alamat, email, no_hp, pangkat, tanggal_sk, tanggal_sk_cpns, jabatan, 
-    spesialis, gaji_pokok, grade, pendidikan \n
-    \nSebagai contoh,
-    \nContoh 1 - Berapa banyak jumlah data pegawai yang ada?,
-    perintah SQL yang dihasilkan akan seperti ini SELECT COUNT(*) FROM pegawai;
-    \nContoh 2 - Tampilkan data pegawai dengan pendidikan S1?,
-    perintah SQL yang dihasilkan akan seperti ini SELECT * FROM pegawai WHERE pendidikan="S1";
-    dan juga hasil dari query SQL nya jangan sampai mengandung karakter ``` pada bagian awal dan akhir dari text keluaran
+    Tugas:
+    Tuliskan query SQL menggunakan JOIN untuk mendapatkan hasil sesuai instruksi.
 
-    """
-]
+    Skema Database:
+    - Table: pegawai (id, nip, nik, kota_lahir, tanggal_lahir, jenis_kelamin, status_pernikahan, status_kepegawaian, agama, alamat, email, no_hp, pangkat, tanggal_sk, tanggal_sk_cpns, jabatan, spesialis, gaji_pokok, grade, pendidikan)
+    - Table: tugas_belajar (id, id_pegawai, tanggal_mulai, tanggal_selesai, lama_hari, jenis_tubel, nomor_sk, perguruan_tinggi, pembiayaan, status)
+    - Table: cuti (id, id_pegawai, tanggal_mulai, tanggal_selesai, lama_hari, alasan, status)
 
-aturan_eng = [
-    """
-    You are an expert in converting Bahasa questions to SQL query!
-    The SQL database has the name pegawai and has the following columns - nip, nik, kota_lahir, tanggal_lahir, jenis_kelamin, status_pernikahan, status_kepegawaian, agama, alamat, email, no_hp, pangkat, tanggal_sk, tanggal_sk_cpns, jabatan, spesialis, gaji_pokok, grade, pendidikan\n
-    \nFor example,
-    \nExample 1 - How many entries of records are present?, 
-    the SQL command will be something like this SELECT COUNT(*) FROM pegawai ;
-    \nExample 2 - Tell me all the pegawai dengan status Aktif?, 
-    the SQL command will be something like this SELECT * FROM pegawai 
-    where pendidikan = "S1"; 
-    also the sql code should not have ``` in beginning or end and sql word in output
+    Foreign Key:
+    - tugas_belajar(id_pegawai) REFERENCES pegawai(id)
+    - cuti(id_pegawai) REFERENCES pegawai(id)
 
+    Contoh instruksi:
+    - Tampilkan data pegawai yang sedang Tugas Belajar?,
+    \nHasilnya akan seperti SELECT p.nip, p.nama tb.perguruan_tinggi tb.pembiayaan FROM pegawai p JOIN tugas_belajar tb ON p.id = tb.id_pegawai WHERE tb.status = 'berlangsung';
+    - Tampilkan data pegawai yang sedang Cuti berserta alasannya?,
+    \nHasilnya akan seperti SELECT p.nip, p.nama c.tanggal_mulai c.lama_hari c.alasan FROM pegawai p JOIN cuti c ON p.id = c.id_pegawai WHERE c.status = 'berlangsung';
+    - Tampilkan data pegawai yang pernah cuti melahirkan?,
+    \nHasilnya akan seperti SELECT p.nip, p.nama c.tanggal_mulai c.lama_hari c.alasan FROM pegawai p JOIN cuti c ON p.id = c.id_pegawai WHERE c.alasan = 'Melahirkan';
+    - Tampilkan jumlah pegawai berdasarkan pendidikan?,
+    \nHasilnya akan seperti SELECT pendidikan, COUNT(*) AS jumlah_pegawai FROM pegawai GROUP BY pendidikan ORDER BY pendidikan ASC;
+    - Tampilkan pegawai yang berumur di atas 40 tahun?,
+    \nHasilnya akan seperti SELECT nip, nama, tanggal_lahir, TIMESTAMPDIFF(YEAR, tanggal_lahir, CURDATE()) AS umur FROM pegawai WHERE TIMESTAMPDIFF(YEAR, tanggal_lahir, CURDATE()) > 40;
+    - Buatkan grafik pegawai berdasarkan jenis kelamin?,
+    \nHasilnya akan seperti SELECT jenis_kelamin, COUNT(*) AS jumlah_pegawai FROM pegawai GROUP BY jenis_kelamin ORDER BY jumlah_pegawai DESC;
+    - Buatkan grafik pegawai berdasarkan umur?,
+    \nHasilnya akan seperti 
+    SELECT 
+        CASE 
+            WHEN TIMESTAMPDIFF(YEAR, tanggal_lahir, CURDATE()) < 30 THEN 'Di bawah 30 tahun'
+            WHEN TIMESTAMPDIFF(YEAR, tanggal_lahir, CURDATE()) BETWEEN 30 AND 39 THEN '30-39 tahun'
+            WHEN TIMESTAMPDIFF(YEAR, tanggal_lahir, CURDATE()) BETWEEN 40 AND 49 THEN '40-49 tahun'
+            ELSE '50 tahun ke atas'
+        END AS kategori_umur,
+        COUNT(*) AS jumlah_pegawai
+    FROM pegawai
+    GROUP BY kategori_umur
+    ORDER BY kategori_umur;
+
+    Hasil dari query SQL nya jangan sampai mengandung karakter ``` pada bagian awal dan akhir dari text keluaran
     """
 ]
 
