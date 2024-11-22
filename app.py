@@ -40,17 +40,6 @@ def get_gemini_response(question, prompt):
     response = model.generate_content([prompt[0], question])
     return response.text
 
-def read_sql_query(sql,db):
-    conn = db_connection
-    cur = conn.cursor()
-    cur.execute(sql)
-    rows = cur.fetchall()
-    conn.commit()
-    conn.close()
-    for row in rows:
-        print(row)
-    return rows
-
 def hapus_kata(kalimat, kata_dihapus):
     pola = r'\b(?:' + '|'.join(map(re.escape, kata_dihapus)) + r')\b'
     return re.sub(pola, '', kalimat, flags=re.IGNORECASE).strip()
@@ -119,7 +108,7 @@ with st.sidebar:
 for message in st.session_state.messages:
     if message["role"] == "user":   
         with st.chat_message(message["role"], avatar=USER_AVATAR):
-            st.markdown(message["content"])
+            st.success(message["content"])
     else: 
         with st.chat_message(message["role"], avatar=BOT_AVATAR):
             if "respon" in message:
@@ -129,6 +118,8 @@ for message in st.session_state.messages:
                     st.code(message["qu"], language="sql")
             if "dataframe" in message:
                 st.dataframe(message["dataframe"])
+            if "jawaban_t" in message:
+                st.markdown(message["jawaban_t"])
             if "figure" in message:
                 st.pyplot(message["figure"])
             if "disclaimer" in message:
@@ -141,30 +132,30 @@ aturan = [
     Tugas:
     Tuliskan query SQL menggunakan JOIN untuk mendapatkan hasil sesuai instruksi.
 
-    Skema Database:
+    \nSkema Database:
     - Table: pegawai (id, nip, nik, kota_lahir, tanggal_lahir, jenis_kelamin, status_pernikahan, status_kepegawaian, agama, alamat, email, no_hp, pangkat, tanggal_sk, tanggal_sk_cpns, jabatan, spesialis, gaji_pokok, grade, pendidikan)
     - Table: tugas_belajar (id, id_pegawai, tanggal_mulai, tanggal_selesai, lama_hari, jenis_tubel, nomor_sk, perguruan_tinggi, pembiayaan, status)
     - Table: cuti (id, id_pegawai, tanggal_mulai, tanggal_selesai, lama_hari, alasan, status)
 
-    Foreign Key:
+    \nForeign Key:
     - tugas_belajar(id_pegawai) REFERENCES pegawai(id)
     - cuti(id_pegawai) REFERENCES pegawai(id)
 
     Contoh instruksi:
-    - Tampilkan data pegawai yang sedang Tugas Belajar?,
-    \nHasilnya akan seperti SELECT p.nip, p.nama tb.perguruan_tinggi tb.pembiayaan FROM pegawai p JOIN tugas_belajar tb ON p.id = tb.id_pegawai WHERE tb.status = 'berlangsung';
-    - Tampilkan data pegawai yang sedang Cuti berserta alasannya?,
-    \nHasilnya akan seperti SELECT p.nip, p.nama c.tanggal_mulai c.lama_hari c.alasan FROM pegawai p JOIN cuti c ON p.id = c.id_pegawai WHERE c.status = 'berlangsung';
-    - Tampilkan data pegawai yang pernah cuti melahirkan?,
-    \nHasilnya akan seperti SELECT p.nip, p.nama c.tanggal_mulai c.lama_hari c.alasan FROM pegawai p JOIN cuti c ON p.id = c.id_pegawai WHERE c.alasan = 'Melahirkan';
-    - Tampilkan jumlah pegawai berdasarkan pendidikan?,
-    \nHasilnya akan seperti SELECT pendidikan, COUNT(*) AS jumlah_pegawai FROM pegawai GROUP BY pendidikan ORDER BY pendidikan ASC;
-    - Tampilkan pegawai yang berumur di atas 40 tahun?,
-    \nHasilnya akan seperti SELECT nip, nama, tanggal_lahir, TIMESTAMPDIFF(YEAR, tanggal_lahir, CURDATE()) AS umur FROM pegawai WHERE TIMESTAMPDIFF(YEAR, tanggal_lahir, CURDATE()) > 40;
-    - Buatkan grafik pegawai berdasarkan jenis kelamin?,
-    \nHasilnya akan seperti SELECT jenis_kelamin, COUNT(*) AS jumlah_pegawai FROM pegawai GROUP BY jenis_kelamin ORDER BY jumlah_pegawai DESC;
-    - Buatkan grafik pegawai berdasarkan umur?,
-    \nHasilnya akan seperti 
+    \n- Tampilkan data pegawai yang sedang Tugas Belajar?,
+    Hasilnya akan seperti SELECT p.nip, p.nama tb.perguruan_tinggi tb.pembiayaan FROM pegawai p JOIN tugas_belajar tb ON p.id = tb.id_pegawai WHERE tb.status = 'berlangsung';
+    \n- Tampilkan data pegawai yang sedang Cuti berserta alasannya?,
+    Hasilnya akan seperti SELECT p.nip, p.nama c.tanggal_mulai c.lama_hari c.alasan FROM pegawai p JOIN cuti c ON p.id = c.id_pegawai WHERE c.status = 'berlangsung';
+    \n- Tampilkan data pegawai yang pernah cuti melahirkan?,
+    Hasilnya akan seperti SELECT p.nip, p.nama c.tanggal_mulai c.lama_hari c.alasan FROM pegawai p JOIN cuti c ON p.id = c.id_pegawai WHERE c.alasan = 'Melahirkan';
+    \n- Tampilkan jumlah pegawai berdasarkan pendidikan?,
+    Hasilnya akan seperti SELECT pendidikan, COUNT(*) AS jumlah_pegawai FROM pegawai GROUP BY pendidikan ORDER BY pendidikan ASC;
+    \n- Tampilkan pegawai yang berumur di atas 40 tahun?,
+    Hasilnya akan seperti SELECT nip, nama, tanggal_lahir, TIMESTAMPDIFF(YEAR, tanggal_lahir, CURDATE()) AS umur FROM pegawai WHERE TIMESTAMPDIFF(YEAR, tanggal_lahir, CURDATE()) > 40;
+    \n- Buatkan grafik pegawai berdasarkan jenis kelamin?,
+    Hasilnya akan seperti SELECT jenis_kelamin, COUNT(*) AS jumlah_pegawai FROM pegawai GROUP BY jenis_kelamin ORDER BY jumlah_pegawai DESC;
+    \n- Buatkan grafik pegawai berdasarkan umur?,
+    Hasilnya akan seperti 
     SELECT 
         CASE 
             WHEN TIMESTAMPDIFF(YEAR, tanggal_lahir, CURDATE()) < 30 THEN 'Di bawah 30 tahun'
@@ -177,117 +168,94 @@ aturan = [
     GROUP BY kategori_umur
     ORDER BY kategori_umur;
 
-    Hasil dari query SQL nya jangan sampai mengandung karakter ``` pada bagian awal dan akhir dari text keluaran
+    \n- Siapa pegawai yang berumur paling tua,
+    hasilnya akan seperti SELECT nip, nama, tanggal_lahir, TIMESTAMPDIFF(YEAR, tanggal_lahir, CURDATE()) AS umur FROM pegawai ORDER BY umur DESC LIMIT 1;
+    \n- Siapa pegawai yang berumur 30 tahun
+    hasilnya akan seperti SELECT nip, nama, tanggal_lahir, TIMESTAMPDIFF(YEAR, tanggal_lahir, CURDATE()) AS umur FROM pegawai WHERE TIMESTAMPDIFF(YEAR, tanggal_lahir, CURDATE()) = 30 ORDER BY tanggal_lahir DESC;
+    \nHasil dari query SQL nya jangan sampai mengandung karakter ``` pada bagian awal dan akhir dari text keluaran
     """
 ]
 
 umum = [
     """
-    Anda seorang ahli dalam bidang kepegawaian aparatur sipil negara indonesia!
-    \nContoh 1 - Apa perbedaan PNS dan PPPK?,
-    anda akan menjawab seperti ini PNS berstatus sebagai pegawai tetap negara, dengan jaminan pensiun dan berbagai hak lainnya, sedangkan PPPK adalah pegawai pemerintah dengan perjanjian kerja tertentu dan dapat diperpanjang berdasarkan kebutuhan.
-    \nContoh 2 - Apa yang dimaksud dengan tugas belajar bagi PNS?,
-    anda akan menjawab seperti ini Tugas belajar adalah izin resmi yang biasanya dibiayai atau disponsori oleh pemerintah, sementara izin belajar adalah izin untuk melanjutkan pendidikan secara mandiri di luar jam kerja tanpa pembiayaan dari pemerintah. PNS dengan izin belajar tetap harus melaksanakan tugas hariannya.
-    \nDengan menggunakan pengetahuan yang Anda miliki tentang kepegawaian aparatur sipil negara indonesia, jawablah pertanyaan-pertanyaan tersebut dengan cara yang informatif dan mudah dipahami bagi penanya tidak harus terpaku dengan jawaban potensial untuk setiap pertanyaan. 
+    Tugas:
+    Jawablah pertanyaan tersebut dalam konteks ASN Indonesia dengan singkat namun tetap informatif dan mudah dipahami, 
     Jika ada pertanyaan yang tidak bisa dijawab dapat dialihkan ke CS BKN.
     """
 ]
 
-def run_task_grafik(question,prompt):
+def respon(question,prompt):
     response=get_gemini_response(question,prompt)
-    response = str(response).replace("```", "").replace("sql", "").replace("`", "").replace(";", "").replace("\n", " ")
+    response = str(response).replace("```", "").replace("sql", "").replace("`", "").replace(";", "").replace("\n", " ").replace("   ", " ")
     print(response)
-    query = response  # Ganti dengan query yang sesuai
+    return response
+
+def run_task_grafik(question,prompt):
+    query = respon(question,prompt)  
     try:
-        df = pd.read_sql_query(query, db_connection)
+        df = pd.read_sql(query, db_connection)
         sum_data = len(df)
-        exi = 0
-        fail = 0
-        thres = 5
-        while exi == 0:
-            if sum_data == 0:
-                fail += 1
-            else:
-                if debug_mode:
-                    print(df)
-                exi = 1
-                stat = "success"
-            if fail > thres:
-                stat = "fail"
-                exi = 1
-
-        header = df.columns.tolist()
-        x = header[0]
-        y = header[1]
-
-        # Membuat DataFrame contoh
-        if df[x].dtypes == 'int64':
-            a = df[y].tolist()
-            b = df[x].tolist()
-            kategori = y
-        else:        
-            a = df[x].tolist()
-            b = df[y].tolist()
-            kategori = x
-
-        panjang_data = len(a)
-
-        # Menampilkan judul
-        kalimat = question
-        filter = ["tampilkan", "buatkan", "buat", "coba", "apa", "bagaimana", "gimana", "mengapa", "dimana", "grafik"]
-        judul = hapus_kata(kalimat, filter)
-
-        if panjang_data <= 10:
-            graf = grafik_bar(a,b,judul,kategori)
+        if sum_data == 0:
+            stat = "fail"
+            graf = "None"
+            return query, df, graf, disclaimer, stat
         else:
-            graf = grafik_pie(a,b,judul)
+            stat = "success"
 
-        return query, df, graf, disclaimer, stat
+            header = df.columns.tolist()
+            x = header[0]
+            y = header[1]
 
-    except pymysql.MySQLError as e:
-        #st.subheader(f"Error MySQL terjadi: {e}")
-        st.error("Oops! Terjadi kesalahan pada koneksi DB, ulangi kembali atau ganti perintah", icon="🚨")
-    except pd.io.sql.DatabaseError as e:
-        #st.subheader(f"Error pada query atau database: {e}")
-        st.error("Oops! Terjadi kesalahan query, ulangi kembali atau ganti perintah", icon="🚨")
+            # Membuat DataFrame contoh
+            if df[x].dtypes == 'int64':
+                a = df[y].tolist()
+                b = df[x].tolist()
+                kategori = y
+            else:        
+                a = df[x].tolist()
+                b = df[y].tolist()
+                kategori = x
+
+            panjang_data = len(a)
+
+            # Menampilkan judul
+            kalimat = question
+            filter = ["tampilkan", "buatkan", "buat", "coba", "apa", "bagaimana", "gimana", "mengapa", "dimana", "grafik"]
+            judul = hapus_kata(kalimat, filter)
+
+            if panjang_data <= 10:
+                graf = grafik_bar(a,b,judul,kategori)
+            else:
+                graf = grafik_pie(a,b,judul)
+            return query, df, graf, disclaimer, stat
     except Exception as e:
-        #st.subheader(f"Terjadi kesalahan: {e}")
-        st.error("Oops! Terjadi kesalahan, ulangi kembali atau ganti perintah", icon="🚨")
-    finally:
-        db_connection.close()
+        st.markdown("Oops! Terjadi kesalahan, ulangi kembali atau ganti perintah", icon="🚨")
 
 def run_task_khusus(question,prompt):
-    response=get_gemini_response(question,prompt)
-    response = str(response).replace("```", "").replace("sql", "").replace("`", "").replace(";", "").replace("\n", " ")
-    print(response)
-    query = response  
+    query = respon(question,prompt)
     try:
-        df = pd.read_sql_query(query, db_connection)
+        df = pd.read_sql(query, db_connection)
+        df = df.set_index(pd.RangeIndex(start=1, stop=len(df)+1, step=1))
         sum_data = len(df)
-        exi = 0
-        fail = 0
-        thres = 5
-        while exi == 0:
-            if sum_data == 0:
-                fail += 1
+        print(df)
+        if sum_data == 0:
+            stat = "fail"
+            return query, df, disclaimer, stat, stat
+        else:
+            stat = "success"
+            if sum_data == 1:
+                aturan = [question+""" berikan analisis datanya secara singkat maksimal dua paragraf
+                          dalam konteks kepegawaian ASN Indonesia
+                          dan jangan tampilkan data dalam bentuk tabel"""]
             else:
-                if debug_mode:
-                    print(df)
-                exi = 1
-                stat = "success"
-            if fail > thres:
-                stat = "fail"
-                exi = 1
-        return query, df, disclaimer, stat
-    
-    except pymysql.MySQLError as e:
-        st.error("Oops! Terjadi kesalahan pada koneksi DB, ulangi kembali atau ganti perintah", icon="🚨")
-    except pd.io.sql.DatabaseError as e:
-        st.error("Oops! Terjadi kesalahan query, ulangi kembali atau ganti perintah", icon="🚨")
+                aturan = [question+""" berikan analisis datanya maksimal satu paragraf 
+                          dengan konteks kepegawaian ASN Indonesia
+                          dan jangan tampilkan data dalam bentuk tabel"""]
+            text = df.to_string()
+            hasil = get_gemini_response(text, aturan)
+            return query, df, disclaimer, stat, hasil
     except Exception as e:
-        st.error("Oops! Terjadi kesalahan, ulangi kembali atau ganti perintah", icon="🚨")
-    finally:
-        db_connection.close()
+        st.markdown("Oops! Terjadi kesalahan, ulangi kembali atau ganti perintah", icon="🚨")    
 
 def run_task_umum(question,prompt):
     response=get_gemini_response(question,prompt)
@@ -298,12 +266,15 @@ def cek_kata_terkandung(kalimat, kata_list):
     hasil = re.search(pattern, kalimat)  # Cari salah satu kata
     return bool(hasil)
 
+def kesalahan():
+    st.session_state.messages.append({"role": "assistant", "content": prompt, "gagal": "Sistem Gagal Menjawab!"})
+
 # Main chat interface
 def eksekusi_utama(prompt):
     st.session_state.ulangi = False
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user", avatar=USER_AVATAR):
-        st.markdown(prompt)
+        st.success(prompt)
 
     p_khusus = ["data pegawai", "tampilkan", "buatkan", "siapa pegawai", "siapa saja", "berapa jumlah pegawai", 
     "siapa pegawai yang", "sebutkan pegawai yang"]
@@ -320,46 +291,42 @@ def eksekusi_utama(prompt):
                     st.pyplot(fi)
                     st.markdown(disc)
                 else:
-                    st.error("Siap Salah !!!, saya belum bisa menjawabnya, saya akan belajar lebih giat lagi")
+                    st.error("Siap Salah !!!, saya belum bisa menjawabnya, saya akan belajar lebih giat lagi", icon="🙏")
+                    kesalahan()
             if debug_mode:
                 st.session_state.messages.append({"role": "assistant", "content": prompt, "qu": q, "dataframe": d, "figure": fi, "disclaimer": disc})
             else:
                 if s == "success":
                     st.session_state.messages.append({"role": "assistant", "content": prompt, "dataframe": d, "figure": fi, "disclaimer": disc})
-                else:
-                    st.session_state.messages.append({"role": "assistant", "content": prompt, "gagal": "Sistem Gagal Menjawab!"})
         except TypeError as e:
-            pass
+            st.error("Siap salah! Saya melakukan kesalahan, mohon izin untuk mengulangi kembali atau ganti perintah", icon="🙏")
+            kesalahan()
             
 
     elif cek_kata_terkandung(prompt, p_khusus):
         try:
-            q,d,disc,s = run_task_khusus(prompt, aturan)
+            q,d,disc,s,hasil = run_task_khusus(prompt, aturan)
             with st.chat_message("assistant", avatar=BOT_AVATAR):
                 if debug_mode:
                     st.code(q, language="sql")
                 if s == "success":
                     st.dataframe(d)
+                    st.markdown(hasil)
                     st.markdown(disc)
+                    st.session_state.messages.append({"role": "assistant", "content": prompt, "qu": q, "dataframe": d, "jawaban_t": hasil, "disclaimer": disc})
                 else:
-                    st.error("Siap Salah !!!, saya belum bisa menjawabnya, saya akan belajar lebih giat lagi")
-            if debug_mode:
-                st.session_state.messages.append({"role": "assistant", "content": prompt, "qu": q, "dataframe": d, "disclaimer": disc})
-            else:
-                if s == "success":
-                    st.session_state.messages.append({"role": "assistant", "content": prompt, "dataframe": d, "disclaimer": disc})
-                else:
-                    st.session_state.messages.append({"role": "assistant", "content": prompt, "gagal": "Sistem Gagal Menjawab!"})
+                    st.error("Siap Salah !!!, saya belum bisa menjawabnya, saya akan belajar lebih giat lagi", icon="🙏")  
+                    kesalahan()
         except TypeError as e:
-            pass
-        
+            st.error("Siap salah! Saya melakukan kesalahan, mohon izin untuk mengulangi kembali atau ganti perintah", icon="🙏")
+            kesalahan()
     else:
         q = run_task_umum(prompt, umum)
         with st.chat_message("assistant", avatar=BOT_AVATAR):
             st.markdown(q)
         st.session_state.messages.append({"role": "assistant", "content": prompt, "respon": q})
 
-prompt = st.chat_input("Contoh perintah : Tampilkan data ... / Buatkan grafik ... / Siapa pegawai yang ... / dll ")
+prompt = st.chat_input("Contoh perintah : Tampilkan data ... / Buatkan grafik ... dll ")
 if prompt:
     st.session_state.perintah = prompt
     eksekusi_utama(prompt)    
@@ -372,4 +339,4 @@ if st.session_state.perintah is not None:
     if st.button("Jika jawaban tidak sesuai, klik disini untuk mengulangi !"):
         st.session_state.ulangi = True
 
-save_chat_history(st.session_state.messages)
+#save_chat_history(st.session_state.messages)
