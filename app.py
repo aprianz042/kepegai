@@ -15,7 +15,7 @@ warnings.filterwarnings("ignore")
 from dotenv import load_dotenv
 load_dotenv()
 
-debug_mode = True # True / False
+debug_mode = False # True / False
 
 db_connection = pymysql.connect(
     host=st.secrets["DB_HOST"],       
