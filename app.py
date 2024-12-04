@@ -7,16 +7,21 @@ import pymysql
 import pandas as pd
 import matplotlib.pyplot as plt
 from sqlalchemy import create_engine
+import warnings
+
+# Menonaktifkan semua warning
+warnings.filterwarnings("ignore")
 
 from dotenv import load_dotenv
 load_dotenv()
 
 debug_mode = True # True / False
 
-host=st.secrets["DB_HOST"]     
-user=st.secrets["DB_USER"]      
-password=st.secrets["DB_GEMBOK"]  
-database=st.secrets["DB_NYA"]
+db_connection = pymysql.connect(
+    host=st.secrets["DB_HOST"],       
+    user=st.secrets["DB_USER"],          
+    password=st.secrets["DB_GEMBOK"], 
+    database=st.secrets["DB_NYA"]) 
 
 setUP = f"mysql+pymysql://{user}:{password}@{host}/{database}"
 db_connection = create_engine(setUP)
@@ -28,8 +33,8 @@ disclaimer = "⚠ Jawaban ini terbatas pada basis data yang kami miliki !!!"
 
 
 st.title(BOT_AVATAR+"Asisten Kepegawaian")
-st.subheader("Siap Menggantikan Anda yang Useless HaHaHAhA"+TAWA)
-client = genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+st.write("Siap Menggantikan Anda yang Useless HaHaHAhA"+TAWA)
+client = genai.configure(api_key=gem_api)
 
 # Ensure genai_model is initialized in session state
 if "genai_model" not in st.session_state:
@@ -99,10 +104,13 @@ if "masalah" not in st.session_state:
 
 # Sidebar with a button to delete chat history
 with st.sidebar:
-    if st.button("Delete Chat History"):
-        st.session_state.messages = []
-        st.session_state.perintah = None
-        save_chat_history([])
+    try:
+        if st.button("Delete Chat History"):
+            st.session_state.messages = []
+            st.session_state.perintah = None
+            save_chat_history([])
+    except Exception as e:
+        st.error("Terjadi kesalahan !!!, Klik tombolnya kembali")
 
 # Display chat messages
 for message in st.session_state.messages:
@@ -118,6 +126,11 @@ for message in st.session_state.messages:
                     st.code(message["qu"], language="sql")
             if "dataframe" in message:
                 st.dataframe(message["dataframe"])
+            if debug_mode:
+                if "kode" in message:
+                    st.code(message["kode"], language="python")
+            if "limit" in message:
+                st.markdown(message["limit"])
             if "jawaban_t" in message:
                 st.markdown(message["jawaban_t"])
             if "figure" in message:
@@ -190,7 +203,13 @@ def respon(question,prompt):
     print(response)
     return response
 
+def clean_code(kode):
+    kode = str(kode).replace("**Kode Python:**", "").replace("```python", "").replace("```", "")
+    return kode
+
 def run_task_grafik(question,prompt):
+    if debug_mode:
+        print("perintah grafik")
     query = respon(question,prompt)  
     try:
         df = pd.read_sql(query, db_connection)
@@ -232,6 +251,8 @@ def run_task_grafik(question,prompt):
         st.markdown("Oops! Terjadi kesalahan, ulangi kembali atau ganti perintah", icon="🚨")
 
 def run_task_khusus(question,prompt):
+    if debug_mode:
+        print("perintah khsusus")
     query = respon(question,prompt)
     try:
         df = pd.read_sql(query, db_connection)
@@ -246,24 +267,55 @@ def run_task_khusus(question,prompt):
             if sum_data == 1:
                 aturan = [question+""" berikan analisis datanya secara singkat maksimal dua paragraf
                           dalam konteks kepegawaian ASN Indonesia
-                          dan jangan tampilkan data dalam bentuk tabel"""]
+                          dan jangan tampilkan data dalam bentuk tabel."""]
             else:
                 aturan = [question+""" berikan analisis datanya maksimal satu paragraf 
                           dengan konteks kepegawaian ASN Indonesia
-                          dan jangan tampilkan data dalam bentuk tabel"""]
+                          dan jangan tampilkan data dalam bentuk tabel."""]
             text = df.to_string()
             hasil = get_gemini_response(text, aturan)
             return query, df, disclaimer, stat, hasil
     except Exception as e:
         st.markdown("Oops! Terjadi kesalahan, ulangi kembali atau ganti perintah", icon="🚨")    
 
+def run_task_grafik_gem(question,prompt):
+    if debug_mode:
+        print("perintah grafik gemini")
+    filter = ["dengan", "gemini", "dengan gemini"]
+    question = hapus_kata(question, filter)
+    query = respon(question,prompt)
+    try:
+        df = pd.read_sql(query, db_connection)
+        df = df.set_index(pd.RangeIndex(start=1, stop=len(df)+1, step=1))
+        sum_data = len(df)
+        print(df)
+        if sum_data == 0:
+            stat = "fail"
+            return query, df, disclaimer, stat, stat
+        else:
+            stat = "success"
+            aturan = [question+""" ,\ndataframenya jadikan bahan grafik lalu buatkan satu kode python untuk membuat grafiknya dengan matplotlib fig dan tampilkan fig dengan lib streamlit,
+                        \nhasilnya hanya kodenya saja tanpa mengandung judul dan karakter ``` pada bagian awal dan akhir dari kode!
+                      """]
+            text = """Dataframe : """+df.to_string()
+            hasil = get_gemini_response(text, aturan)
+            return query, df, disclaimer, stat, hasil
+    except Exception as e:
+        st.markdown("Oops! Terjadi kesalahan, ulangi kembali atau ganti perintah", icon="🚨")  
+
 def run_task_umum(question,prompt):
+    if debug_mode:
+        print("perintah umum")
     response=get_gemini_response(question,prompt)
     return response
 
-def cek_kata_terkandung(kalimat, kata_list):
-    pattern = "|".join(kata_list)  # Gabungkan kata dengan operator OR
-    hasil = re.search(pattern, kalimat)  # Cari salah satu kata
+def cek_frasa(kalimat, frasa_list):
+    #pola = "|".join(frasa_list)
+    pola = [frasa for frasa in frasa_list if frasa.lower() in kalimat.lower()]
+    return pola
+
+def cek_perintah(kalimat, kata_list):
+    hasil = cek_frasa(kalimat, kata_list)
     return bool(hasil)
 
 def kesalahan():
@@ -279,8 +331,36 @@ def eksekusi_utama(prompt):
     p_khusus = ["data pegawai", "tampilkan", "buatkan", "siapa pegawai", "siapa saja", "berapa jumlah pegawai", 
     "siapa pegawai yang", "sebutkan pegawai yang"]
     p_grafik = ["buatkan grafik", "grafik"]
+    p_gem_grafik = ["dengan gemini"]
 
-    if cek_kata_terkandung(prompt, p_grafik):
+    if cek_perintah(prompt, p_gem_grafik):
+        try:
+            q,d,disc,s,hasil = run_task_grafik_gem(prompt, aturan)
+            with st.chat_message("assistant", avatar=BOT_AVATAR):
+                if debug_mode:
+                    st.code(q, language="sql")
+                if s == "success":
+                    st.dataframe(d)
+                    output = """st.session_state.messages.append({"role": "assistant", "content": prompt, "qu": q, "dataframe": d, "kode": hasil, "figure": fig, "disclaimer": disc})"""
+                    hasil = hasil +"\n"+ output
+                    hasil = clean_code(hasil)
+                    if debug_mode:
+                        st.code(hasil, language="python")
+                    try:
+                        exec(hasil)
+                    except Exception as e:
+                        st.error(" Ada kesalahan pada kode dan tidak bisa dieksekusi", icon="🙏")
+                    st.markdown(disc)
+                    limit = "🙏 Maaf storage terbatas sehingga hasil grafik dari gemini tidak bisa ditampilkan"
+                    #st.session_state.messages.append({"role": "assistant", "content": prompt, "qu": q, "dataframe": d, "kode": hasil, "limit": limit,"disclaimer": disc})
+                else:
+                    st.error("Siap Salah !!!, saya belum bisa menjawabnya, saya akan belajar lebih giat lagi", icon="🙏")  
+                    kesalahan()
+        except TypeError as e:
+            st.error("Siap salah! Saya melakukan kesalahan, mohon izin untuk mengulangi kembali atau ganti perintah", icon="🙏")
+            kesalahan()
+
+    elif cek_perintah(prompt, p_grafik):
         try:
             q,d,fi,disc,s = run_task_grafik(prompt, aturan)
             with st.chat_message("assistant", avatar=BOT_AVATAR):
@@ -303,7 +383,7 @@ def eksekusi_utama(prompt):
             kesalahan()
             
 
-    elif cek_kata_terkandung(prompt, p_khusus):
+    elif cek_perintah(prompt, p_khusus):
         try:
             q,d,disc,s,hasil = run_task_khusus(prompt, aturan)
             with st.chat_message("assistant", avatar=BOT_AVATAR):
