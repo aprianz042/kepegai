@@ -256,7 +256,7 @@ def run_task_khusus(question,prompt):
     query = respon(question,prompt)
     try:
         df = pd.read_sql(query, db_connection)
-        df = df.set_index(pd.RangeIndex(start=1, stop=len(df)+1, step=1))
+        #df = df.set_index(pd.RangeIndex(start=1, stop=len(df)+1, step=1))
         sum_data = len(df)
         print(df)
         if sum_data == 0:
