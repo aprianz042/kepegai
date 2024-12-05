@@ -389,9 +389,7 @@ def eksekusi_utama(prompt):
             q,d,disc,stat,hasil = run_task_khusus(prompt, aturan)
             with st.chat_message("assistant", avatar=BOT_AVATAR):
                 if debug_mode:
-                    st.code(q, language="sql")
-                    st.markdown(hasil)
-                    
+                    st.code(q, language="sql")                    
                 if stat == 1:
                     st.dataframe(d)
                     st.markdown(hasil)
