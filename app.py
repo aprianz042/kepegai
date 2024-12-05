@@ -33,7 +33,7 @@ disclaimer = "⚠ Jawaban ini terbatas pada basis data yang kami miliki !!!"
 
 
 st.title(BOT_AVATAR+"Asisten Kepegawaian")
-st.write("Siap Menggantikan Anda yang Useless HaHaHAhA"+TAWA)
+st.write("Siap Perintah")
 client = genai.configure(api_key=gem_api)
 
 # Ensure genai_model is initialized in session state
