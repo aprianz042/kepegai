@@ -17,11 +17,10 @@ load_dotenv()
 
 debug_mode = False # True / False
 
-db_connection = pymysql.connect(
-    host=st.secrets["DB_HOST"],       
-    user=st.secrets["DB_USER"],          
-    password=st.secrets["DB_GEMBOK"], 
-    database=st.secrets["DB_NYA"]) 
+host=st.secrets["DB_HOST"]       
+user=st.secrets["DB_USER"]          
+password=st.secrets["DB_GEMBOK"] 
+database=st.secrets["DB_NYA"] 
 
 setUP = f"mysql+pymysql://{user}:{password}@{host}/{database}"
 db_connection = create_engine(setUP)
