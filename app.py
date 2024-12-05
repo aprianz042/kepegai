@@ -260,10 +260,10 @@ def run_task_khusus(question,prompt):
         sum_data = len(df)
         print(df)
         if sum_data == 0:
-            stat = "fail"
+            stat = 0
             return query, df, disclaimer, stat, stat
         else:
-            stat = "success"
+            stat = 1
             if sum_data == 1:
                 aturan = [question+""" berikan analisis datanya secara singkat maksimal dua paragraf
                           dalam konteks kepegawaian ASN Indonesia
@@ -290,10 +290,10 @@ def run_task_grafik_gem(question,prompt):
         sum_data = len(df)
         print(df)
         if sum_data == 0:
-            stat = 0
+            stat = "fail"
             return query, df, disclaimer, stat, stat
         else:
-            stat = 1
+            stat = "success"
             aturan = [question+""" ,\ndataframenya jadikan bahan grafik lalu buatkan satu kode python untuk membuat grafiknya dengan matplotlib fig dan tampilkan fig dengan lib streamlit,
                         \nhasilnya hanya kodenya saja tanpa mengandung judul dan karakter ``` pada bagian awal dan akhir dari kode!
                       """]
