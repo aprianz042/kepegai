@@ -15,7 +15,7 @@ warnings.filterwarnings("ignore")
 from dotenv import load_dotenv
 load_dotenv()
 
-debug_mode = False # True / False
+debug_mode = True # True / False
 
 host=st.secrets["DB_HOST"]       
 user=st.secrets["DB_USER"]          
