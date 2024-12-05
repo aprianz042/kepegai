@@ -360,8 +360,7 @@ def eksekusi_utama(prompt):
             st.error("Siap salah! Saya melakukan kesalahan, mohon izin untuk mengulangi kembali atau ganti perintah", icon="🙏")
             kesalahan()
 
-    if cek_perintah(prompt, p_grafik):    
-    #elif cek_perintah(prompt, p_grafik):
+    elif cek_perintah(prompt, p_grafik):
         try:
             q,d,fi,disc,s = run_task_grafik(prompt, aturan)
             with st.chat_message("assistant", avatar=BOT_AVATAR):
