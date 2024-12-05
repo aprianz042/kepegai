@@ -311,7 +311,8 @@ def run_task_umum(question,prompt):
 
 def cek_frasa(kalimat, frasa_list):
     #pola = "|".join(frasa_list)
-    pola = [frasa for frasa in frasa_list if frasa.lower() in kalimat.lower()]
+    #pola = [frasa for frasa in frasa_list if frasa.lower() in kalimat.lower()]
+    pola = [frasa for frasa in frasa_list if frasa and frasa.lower() in kalimat.lower()]
     return pola
 
 def cek_perintah(kalimat, kata_list):
