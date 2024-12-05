@@ -290,10 +290,10 @@ def run_task_grafik_gem(question,prompt):
         sum_data = len(df)
         print(df)
         if sum_data == 0:
-            stat = "fail"
+            stat = 0
             return query, df, disclaimer, stat, stat
         else:
-            stat = "success"
+            stat = 1
             aturan = [question+""" ,\ndataframenya jadikan bahan grafik lalu buatkan satu kode python untuk membuat grafiknya dengan matplotlib fig dan tampilkan fig dengan lib streamlit,
                         \nhasilnya hanya kodenya saja tanpa mengandung judul dan karakter ``` pada bagian awal dan akhir dari kode!
                       """]
@@ -390,7 +390,7 @@ def eksekusi_utama(prompt):
             with st.chat_message("assistant", avatar=BOT_AVATAR):
                 if debug_mode:
                     st.code(q, language="sql")
-                if s == "success":
+                if s == 1:
                     st.dataframe(d)
                     st.markdown(hasil)
                     st.markdown(disc)
