@@ -20,7 +20,8 @@ debug_mode = False # True / False
 host=st.secrets["DB_HOST"]       
 user=st.secrets["DB_USER"]          
 password=st.secrets["DB_GEMBOK"] 
-database=st.secrets["DB_NYA"] 
+database=st.secrets["DB_NYA"]
+gem_api=st.secrets["GOOGLE_API_KEY"]
 
 setUP = f"mysql+pymysql://{user}:{password}@{host}/{database}"
 db_connection = create_engine(setUP)
