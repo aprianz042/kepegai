@@ -386,11 +386,13 @@ def eksekusi_utama(prompt):
 
     elif cek_perintah(prompt, p_khusus):
         try:
-            q,d,disc,s,hasil = run_task_khusus(prompt, aturan)
+            q,d,disc,stat,hasil = run_task_khusus(prompt, aturan)
             with st.chat_message("assistant", avatar=BOT_AVATAR):
                 if debug_mode:
                     st.code(q, language="sql")
-                if s == 1:
+                    st.markdown(hasil)
+                    
+                if stat == 1:
                     st.dataframe(d)
                     st.markdown(hasil)
                     st.markdown(disc)
