@@ -380,7 +380,7 @@ def eksekusi_utama(prompt):
                 if s == "success":
                     st.session_state.messages.append({"role": "assistant", "content": prompt, "dataframe": d, "figure": fi, "disclaimer": disc})
         except TypeError as e:
-            st.error("Siap salah! Saya melakukan kesalahan, mohon izin untuk mengulangi kembali atau ganti perintah", icon="🙏")
+            st.error("Ada kesalahan, mohon izin untuk mengulangi kembali atau ganti perintah", icon="🙏")
             kesalahan()
             
 
@@ -399,7 +399,7 @@ def eksekusi_utama(prompt):
                     st.error("Siap Salah !!!, saya belum bisa menjawabnya, saya akan belajar lebih giat lagi", icon="🙏")  
                     kesalahan()
         except TypeError as e:
-            st.error("Siap salah! Saya melakukan kesalahan, mohon izin untuk mengulangi kembali atau ganti perintah", icon="🙏")
+            st.error("Ada kesalahan, mohon izin untuk mengulangi kembali atau ganti perintah", icon="🙏")
             kesalahan()
     else:
         q = run_task_umum(prompt, umum)
