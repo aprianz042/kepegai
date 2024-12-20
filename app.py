@@ -8,35 +8,77 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sqlalchemy import create_engine
 import warnings
+import joblib
+from dotenv import load_dotenv
 
 # Menonaktifkan semua warning
 warnings.filterwarnings("ignore")
-
-from dotenv import load_dotenv
 load_dotenv()
-
 debug_mode = True # True / False
 
+############################# Set Kredensial #############################
 host=st.secrets["DB_HOST"]       
 user=st.secrets["DB_USER"]          
 password=st.secrets["DB_GEMBOK"] 
 database=st.secrets["DB_NYA"]
 gem_api=st.secrets["GOOGLE_API_KEY"]
 
+#host=os.getenv("DB_HOST")       
+#user=os.getenv("DB_USER")       
+#password=os.getenv("DB_GEMBOK")   
+#database=os.getenv("DB_NYA")
+#gem_api=os.getenv("GOOGLE_API_KEY")
+############################################################################
+
+############################# READ STRUKTUR DB #############################
+conn = pymysql.connect(host=host, user=user, password=password, database=database)
+cursor = conn.cursor()
+cp = conn.cursor()
+cursor.execute("SHOW TABLES;")
+cp.execute(f"""
+SELECT TABLE_NAME, COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
+FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+WHERE TABLE_SCHEMA = '{database}' AND REFERENCED_TABLE_NAME IS NOT NULL;
+""")
+tables = cursor.fetchall()
+foreign_keys = cp.fetchall()
+hasil = []
+kolom = []
+for table in tables:
+    table_name = table[0]
+    cursor.execute(f"DESCRIBE {table_name};")
+    columns = cursor.fetchall()
+    for column in columns:
+        #print(f"{column[0]},")
+        kolom.append(column[0])
+    text = ', '.join(kolom)
+    gab = f"- Tabel: {table_name} ({text})"
+    hasil.append(gab)
+    kolom = []
+prompt_db = '\n'.join([f"{item}" for item in hasil])
+for_k = []
+for fk in foreign_keys:
+    for_k.append(f"- {fk[0]}({fk[1]}) REFERENCES {fk[2]}({fk[3]})")
+prompt_fk = '\n'.join([f"{item}" for item in for_k])
+conn.close()
+#########################################################################
+
+############################# Setting Engine #############################
 setUP = f"mysql+pymysql://{user}:{password}@{host}/{database}"
 db_connection = create_engine(setUP)
+client = genai.configure(api_key=gem_api)
+#########################################################################
 
+############################# Variabel Header #############################
 TAWA = "🤣"
 USER_AVATAR = "👤"
 BOT_AVATAR = "🤖"
 disclaimer = "⚠ Jawaban ini terbatas pada basis data yang kami miliki !!!"
-
-
 st.title(BOT_AVATAR+"Asisten Kepegawaian")
 st.write("Siap Perintah")
-client = genai.configure(api_key=gem_api)
+#########################################################################
 
-# Ensure genai_model is initialized in session state
+############################# Fungsi Utama #############################
 if "genai_model" not in st.session_state:
     st.session_state["genai_model"] = genai.GenerativeModel('gemini-pro')
 
@@ -77,14 +119,147 @@ def grafik_pie(a,b,judul):
     ax.pie(b, labels=a, autopct='%1.1f%%')
     #st.pyplot(fig)
     return fig
-############################################################
 
-# Load chat history from shelve file
+def respon(question,prompt):
+    response=get_gemini_response(question,prompt)
+    response = str(response).replace("```", "").replace("sql", "").replace("`", "").replace(";", "").replace("\n", " ").replace("   ", " ")
+    print(response)
+    return response
+
+def clean_code(kode):
+    kode = str(kode).replace("**Kode Python:**", "").replace("```python", "").replace("```", "")
+    return kode
+
+def run_task_grafik(question,prompt):
+    if debug_mode:
+        st.success("perintah grafik")
+    query = respon(question,prompt)  
+    try:
+        df = pd.read_sql(query, db_connection)
+        sum_data = len(df)
+        if sum_data == 0:
+            stat = "fail"
+            graf = "None"
+            return query, df, graf, disclaimer, stat
+        else:
+            stat = "success"
+
+            header = df.columns.tolist()
+            x = header[0]
+            y = header[1]
+
+            # Membuat DataFrame contoh
+            if df[x].dtypes == 'int64':
+                a = df[y].tolist()
+                b = df[x].tolist()
+                kategori = y
+            else:        
+                a = df[x].tolist()
+                b = df[y].tolist()
+                kategori = x
+
+            panjang_data = len(a)
+
+            # Menampilkan judul
+            kalimat = question
+            filter = ["tampilkan", "buatkan", "buat", "coba", "apa", "bagaimana", "gimana", "mengapa", "dimana", "grafik"]
+            judul = hapus_kata(kalimat, filter)
+
+            if panjang_data <= 10:
+                graf = grafik_bar(a,b,judul,kategori)
+            else:
+                graf = grafik_pie(a,b,judul)
+            return query, df, graf, disclaimer, stat
+    except Exception as e:
+        st.markdown("Oops! Terjadi kesalahan, ulangi kembali atau ganti perintah", icon="🚨")
+
+def run_task_khusus(question,prompt):
+    if debug_mode:
+        st.success("perintah khsusus")
+    query = respon(question,prompt)
+    try:
+        df = pd.read_sql(query, db_connection)
+        #df = df.set_index(pd.RangeIndex(start=1, stop=len(df)+1, step=1))
+        sum_data = len(df)
+        print(df)
+        if sum_data == 0:
+            stat = 0
+            return query, df, disclaimer, stat, stat
+        else:
+            stat = 1
+            if sum_data == 1:
+                aturan = [question+""" ,\nberdasarkan dataframenya berikan analisis datanya secara singkat maksimal dua paragraf
+                          dalam konteks kepegawaian ASN Indonesia
+                          dan jangan tampilkan data dalam bentuk tabel."""]
+                text = """Dataframe : """+df.to_string()
+                hasil = get_gemini_response(text, aturan)
+            else:
+            #    aturan = [question+""" ,\nberdasarkan dataframenya berikan analisis datanya maksimal satu paragraf 
+            #              dengan konteks kepegawaian ASN Indonesia
+            #              dan jangan tampilkan data dalam bentuk tabel."""]
+                hasil = "🙏"
+            return query, df, disclaimer, stat, hasil
+    except Exception as e:
+        st.markdown("Oops! Terjadi kesalahan, ulangi kembali atau ganti perintah", icon="🚨")    
+
+def run_task_grafik_gem(question,prompt):
+    if debug_mode:
+        st.success("perintah grafik gemini")
+    filter = ["dengan", "gemini", "dengan gemini"]
+    question = hapus_kata(question, filter)
+    query = respon(question,prompt)
+    try:
+        df = pd.read_sql(query, db_connection)
+        df = df.set_index(pd.RangeIndex(start=1, stop=len(df)+1, step=1))
+        sum_data = len(df)
+        print(df)
+        if sum_data == 0:
+            stat = "fail"
+            return query, df, disclaimer, stat, stat
+        else:
+            stat = "success"
+            aturan = [question+""" ,\ndataframenya jadikan bahan grafik lalu buatkan satu kode python untuk membuat grafiknya dengan matplotlib fig dan tampilkan fig dengan lib streamlit,
+                        \nhasilnya hanya kodenya saja tanpa mengandung judul dan karakter ``` pada bagian awal dan akhir dari kode!
+                      """]
+            text = """Dataframe : """+df.to_string()
+            hasil = get_gemini_response(text, aturan)
+            return query, df, disclaimer, stat, hasil
+    except Exception as e:
+        st.markdown("Oops! Terjadi kesalahan, ulangi kembali atau ganti perintah", icon="🚨")  
+
+def run_task_umum(question,prompt):
+    if debug_mode:
+        st.success("perintah umum")
+    response=get_gemini_response(question,prompt)
+    return response
+
+def cek_frasa(kalimat, frasa_list):
+    #pola = "|".join(frasa_list)
+    #pola = [frasa for frasa in frasa_list if frasa.lower() in kalimat.lower()]
+    pola = [frasa for frasa in frasa_list if frasa and frasa.lower() in kalimat.lower()]
+    return pola
+
+def klasifikasi_perintah(perintah):
+    loaded_pipeline = joblib.load('tfidf_knn_pipeline.pkl')
+    new_texts = perintah
+    predictions = loaded_pipeline.predict([new_texts])
+    print(predictions[0])
+    return predictions[0]
+
+def cek_perintah(kalimat, kata_list):
+    hasil = cek_frasa(kalimat, kata_list)
+    return bool(hasil)
+
+def kesalahan():
+    st.session_state.messages.append({"role": "assistant", "content": prompt, "gagal": "Sistem Gagal Menjawab!"})
+#########################################################################
+
+
+############################# Fungsi UX UI Chat #############################
 def load_chat_history():
     with shelve.open("chat_history") as db:
         return db.get("messages", [])
 
-# Save chat history to shelve file
 def save_chat_history(messages):
     with shelve.open("chat_history") as db:
         db["messages"] = messages
@@ -139,20 +314,19 @@ for message in st.session_state.messages:
                 st.markdown(message["disclaimer"])
             if "gagal" in message:
                 st.error(message["gagal"])
+#########################################################################
 
+############################# Prompt Engineering #############################
 aturan = [
-    """
+    f"""
     Tugas:
     Tuliskan query SQL menggunakan JOIN untuk mendapatkan hasil sesuai instruksi.
 
     \nSkema Database:
-    - Table: pegawai (id, nip, nik, kota_lahir, tanggal_lahir, jenis_kelamin, status_pernikahan, status_kepegawaian, agama, alamat, email, no_hp, pangkat, tanggal_sk, tanggal_sk_cpns, jabatan, spesialis, gaji_pokok, grade, pendidikan)
-    - Table: tugas_belajar (id, id_pegawai, tanggal_mulai, tanggal_selesai, lama_hari, jenis_tubel, nomor_sk, perguruan_tinggi, pembiayaan, status)
-    - Table: cuti (id, id_pegawai, tanggal_mulai, tanggal_selesai, lama_hari, alasan, status)
+    {prompt_db}
 
     \nForeign Key:
-    - tugas_belajar(id_pegawai) REFERENCES pegawai(id)
-    - cuti(id_pegawai) REFERENCES pegawai(id)
+    {prompt_fk}
 
     Contoh instruksi:
     \n- Tampilkan data pegawai yang sedang Tugas Belajar?,
@@ -180,11 +354,15 @@ aturan = [
     FROM pegawai
     GROUP BY kategori_umur
     ORDER BY kategori_umur;
-
+    \n- Pegawai yang telat hari ini?,
+    hasilnya akan seperti SELECT p.nip, p.nama, k.waktu FROM pegawai AS p JOIN kehadiran AS k ON p.id = k.id_pegawai WHERE k.tanggal = CURDATE() AND k.status > 'terlambat';
+    \n- tampilkan data kehadiran pegawai?,
+    hasilnya akan seperti SELECT p.nip, p.nama, k.waktu FROM pegawai AS p JOIN kehadiran AS k ON p.id = k.id_pegawai;
     \n- Siapa pegawai yang berumur paling tua,
     hasilnya akan seperti SELECT nip, nama, tanggal_lahir, TIMESTAMPDIFF(YEAR, tanggal_lahir, CURDATE()) AS umur FROM pegawai ORDER BY umur DESC LIMIT 1;
     \n- Siapa pegawai yang berumur 30 tahun
     hasilnya akan seperti SELECT nip, nama, tanggal_lahir, TIMESTAMPDIFF(YEAR, tanggal_lahir, CURDATE()) AS umur FROM pegawai WHERE TIMESTAMPDIFF(YEAR, tanggal_lahir, CURDATE()) = 30 ORDER BY tanggal_lahir DESC;
+    
     \nHasil dari query SQL nya jangan sampai mengandung karakter ``` pada bagian awal dan akhir dari text keluaran
     """
 ]
@@ -196,133 +374,9 @@ umum = [
     Jika ada pertanyaan yang tidak bisa dijawab dapat dialihkan ke CS BKN.
     """
 ]
+#########################################################################
 
-def respon(question,prompt):
-    response=get_gemini_response(question,prompt)
-    response = str(response).replace("```", "").replace("sql", "").replace("`", "").replace(";", "").replace("\n", " ").replace("   ", " ")
-    print(response)
-    return response
-
-def clean_code(kode):
-    kode = str(kode).replace("**Kode Python:**", "").replace("```python", "").replace("```", "")
-    return kode
-
-def run_task_grafik(question,prompt):
-    if debug_mode:
-        print("perintah grafik")
-    query = respon(question,prompt)  
-    try:
-        df = pd.read_sql(query, db_connection)
-        sum_data = len(df)
-        if sum_data == 0:
-            stat = "fail"
-            graf = "None"
-            return query, df, graf, disclaimer, stat
-        else:
-            stat = "success"
-
-            header = df.columns.tolist()
-            x = header[0]
-            y = header[1]
-
-            # Membuat DataFrame contoh
-            if df[x].dtypes == 'int64':
-                a = df[y].tolist()
-                b = df[x].tolist()
-                kategori = y
-            else:        
-                a = df[x].tolist()
-                b = df[y].tolist()
-                kategori = x
-
-            panjang_data = len(a)
-
-            # Menampilkan judul
-            kalimat = question
-            filter = ["tampilkan", "buatkan", "buat", "coba", "apa", "bagaimana", "gimana", "mengapa", "dimana", "grafik"]
-            judul = hapus_kata(kalimat, filter)
-
-            if panjang_data <= 10:
-                graf = grafik_bar(a,b,judul,kategori)
-            else:
-                graf = grafik_pie(a,b,judul)
-            return query, df, graf, disclaimer, stat
-    except Exception as e:
-        st.markdown("Oops! Terjadi kesalahan, ulangi kembali atau ganti perintah", icon="🚨")
-
-def run_task_khusus(question,prompt):
-    if debug_mode:
-        print("perintah khsusus")
-    query = respon(question,prompt)
-    try:
-        df = pd.read_sql(query, db_connection)
-        #df = df.set_index(pd.RangeIndex(start=1, stop=len(df)+1, step=1))
-        sum_data = len(df)
-        print(df)
-        if sum_data == 0:
-            stat = 0
-            return query, df, disclaimer, stat, stat
-        else:
-            stat = 1
-            if sum_data == 1:
-                aturan = [question+""" berikan analisis datanya secara singkat maksimal dua paragraf
-                          dalam konteks kepegawaian ASN Indonesia
-                          dan jangan tampilkan data dalam bentuk tabel."""]
-            else:
-                aturan = [question+""" berikan analisis datanya maksimal satu paragraf 
-                          dengan konteks kepegawaian ASN Indonesia
-                          dan jangan tampilkan data dalam bentuk tabel."""]
-            text = df.to_string()
-            hasil = get_gemini_response(text, aturan)
-            return query, df, disclaimer, stat, hasil
-    except Exception as e:
-        st.markdown("Oops! Terjadi kesalahan, ulangi kembali atau ganti perintah", icon="🚨")    
-
-def run_task_grafik_gem(question,prompt):
-    if debug_mode:
-        print("perintah grafik gemini")
-    filter = ["dengan", "gemini", "dengan gemini"]
-    question = hapus_kata(question, filter)
-    query = respon(question,prompt)
-    try:
-        df = pd.read_sql(query, db_connection)
-        df = df.set_index(pd.RangeIndex(start=1, stop=len(df)+1, step=1))
-        sum_data = len(df)
-        print(df)
-        if sum_data == 0:
-            stat = "fail"
-            return query, df, disclaimer, stat, stat
-        else:
-            stat = "success"
-            aturan = [question+""" ,\ndataframenya jadikan bahan grafik lalu buatkan satu kode python untuk membuat grafiknya dengan matplotlib fig dan tampilkan fig dengan lib streamlit,
-                        \nhasilnya hanya kodenya saja tanpa mengandung judul dan karakter ``` pada bagian awal dan akhir dari kode!
-                      """]
-            text = """Dataframe : """+df.to_string()
-            hasil = get_gemini_response(text, aturan)
-            return query, df, disclaimer, stat, hasil
-    except Exception as e:
-        st.markdown("Oops! Terjadi kesalahan, ulangi kembali atau ganti perintah", icon="🚨")  
-
-def run_task_umum(question,prompt):
-    if debug_mode:
-        print("perintah umum")
-    response=get_gemini_response(question,prompt)
-    return response
-
-def cek_frasa(kalimat, frasa_list):
-    #pola = "|".join(frasa_list)
-    #pola = [frasa for frasa in frasa_list if frasa.lower() in kalimat.lower()]
-    pola = [frasa for frasa in frasa_list if frasa and frasa.lower() in kalimat.lower()]
-    return pola
-
-def cek_perintah(kalimat, kata_list):
-    hasil = cek_frasa(kalimat, kata_list)
-    return bool(hasil)
-
-def kesalahan():
-    st.session_state.messages.append({"role": "assistant", "content": prompt, "gagal": "Sistem Gagal Menjawab!"})
-
-# Main chat interface
+############################# Fungsi Eksekusi Utama #############################
 def eksekusi_utama(prompt):
     st.session_state.ulangi = False
     st.session_state.messages.append({"role": "user", "content": prompt})
@@ -334,7 +388,10 @@ def eksekusi_utama(prompt):
     p_grafik = ["buatkan grafik", "grafik"]
     p_gem_grafik = ["dengan gemini"]
 
-    if cek_perintah(prompt, p_gem_grafik):
+    perintah = klasifikasi_perintah(prompt)
+
+    #if cek_perintah(prompt, p_gem_grafik):
+    if perintah == 'gemini':
         try:
             q,d,disc,s,hasil = run_task_grafik_gem(prompt, aturan)
             with st.chat_message("assistant", avatar=BOT_AVATAR):
@@ -361,7 +418,8 @@ def eksekusi_utama(prompt):
             st.error("Siap salah! Saya melakukan kesalahan, mohon izin untuk mengulangi kembali atau ganti perintah", icon="🙏")
             kesalahan()
 
-    elif cek_perintah(prompt, p_grafik):
+    #elif cek_perintah(prompt, p_grafik):
+    elif perintah == 'grafik':
         try:
             q,d,fi,disc,s = run_task_grafik(prompt, aturan)
             with st.chat_message("assistant", avatar=BOT_AVATAR):
@@ -383,15 +441,13 @@ def eksekusi_utama(prompt):
             st.error("Ada kesalahan, mohon izin untuk mengulangi kembali atau ganti perintah", icon="🙏")
             kesalahan()
             
-
-    elif cek_perintah(prompt, p_khusus):
+    #elif cek_perintah(prompt, p_khusus):
+    elif perintah == 'khusus':
         try:
             q,d,disc,stat,hasil = run_task_khusus(prompt, aturan)
             with st.chat_message("assistant", avatar=BOT_AVATAR):
                 if debug_mode:
                     st.code(q, language="sql")
-                    st.dataframe(d)
-                    st.markdown(stat)
                 if stat == 1:
                     st.dataframe(d)
                     st.markdown(hasil)
@@ -408,7 +464,9 @@ def eksekusi_utama(prompt):
         with st.chat_message("assistant", avatar=BOT_AVATAR):
             st.markdown(q)
         st.session_state.messages.append({"role": "assistant", "content": prompt, "respon": q})
+############################################################################################
 
+###################### Fungsi Streamlit yang dijalankan pertama kali ######################
 prompt = st.chat_input("Contoh perintah : Tampilkan data ... / Buatkan grafik ... dll ")
 if prompt:
     st.session_state.perintah = prompt
@@ -422,4 +480,5 @@ if st.session_state.perintah is not None:
     if st.button("Jika jawaban tidak sesuai, klik disini untuk mengulangi !"):
         st.session_state.ulangi = True
 
-#save_chat_history(st.session_state.messages)
+save_chat_history(st.session_state.messages)
+############################################################################################
