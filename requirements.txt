@@ -5,3 +5,5 @@ pymysql
 pandas
 matplotlib
 sqlalchemy
+scikit-learn
+joblib
