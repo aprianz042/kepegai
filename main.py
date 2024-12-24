@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 # Menonaktifkan semua warning
 warnings.filterwarnings("ignore")
 load_dotenv()
-debug_mode = True # True / False
+debug_mode = False # True / False
 
 ############################# Set Kredensial #############################
 host=st.secrets["DB_HOST"]       
@@ -480,5 +480,5 @@ if st.session_state.perintah is not None:
     if st.button("Jika jawaban tidak sesuai, klik disini untuk mengulangi !"):
         st.session_state.ulangi = True
 
-save_chat_history(st.session_state.messages)
+#save_chat_history(st.session_state.messages)
 ############################################################################################
