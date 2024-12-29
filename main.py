@@ -131,7 +131,8 @@ def grafik_pie(a,b,judul):
 def respon(question,prompt):
     response=get_gemini_response(question,prompt)
     response = str(response).replace("```", "").replace("sql", "").replace("`", "").replace(";", "").replace("\n", " ").replace("   ", " ")
-    print(response)
+    if debug_mode:
+        print(response)
     return response
 
 def clean_code(kode):
@@ -189,7 +190,10 @@ def run_task_khusus(question,prompt):
         df = pd.read_sql(query, db_connection)
         #df = df.set_index(pd.RangeIndex(start=1, stop=len(df)+1, step=1))
         sum_data = len(df)
-        print(df)
+        
+        if debug_mode:
+            print(df)
+        
         if sum_data == 0:
             stat = 0
             return query, df, disclaimer, stat, stat
@@ -220,7 +224,9 @@ def run_task_grafik_gem(question,prompt):
         df = pd.read_sql(query, db_connection)
         df = df.set_index(pd.RangeIndex(start=1, stop=len(df)+1, step=1))
         sum_data = len(df)
-        print(df)
+        if debug_mode:
+            print(df)
+    
         if sum_data == 0:
             stat = "fail"
             return query, df, disclaimer, stat, stat
@@ -248,10 +254,12 @@ def cek_frasa(kalimat, frasa_list):
     return pola
 
 def klasifikasi_perintah(perintah):
-    loaded_pipeline = joblib.load('tfidf_knn_pipeline.pkl')
-    new_texts = perintah
-    predictions = loaded_pipeline.predict([new_texts])
-    print(predictions[0])
+    loaded_knn = joblib.load('knn_model.pkl')
+    loaded_vectorizer = joblib.load('tfidf_vectorizer.pkl')
+    new_X_tfidf = loaded_vectorizer.transform([perintah])
+    predictions = loaded_knn.predict(new_X_tfidf)
+    if debug_mode:
+        print(predictions[0])
     return predictions[0]
 
 def cek_perintah(kalimat, kata_list):
