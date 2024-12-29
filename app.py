@@ -27,7 +27,6 @@ footer = """
     position: relative;
     bottom: 0;
     width: 100%;
-    background-color: #f1f1f1;
     text-align: left;
     padding: 10px;
     font-size: 12px;
