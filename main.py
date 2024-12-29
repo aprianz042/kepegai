@@ -14,7 +14,15 @@ from dotenv import load_dotenv
 # Menonaktifkan semua warning
 warnings.filterwarnings("ignore")
 load_dotenv()
-debug_mode = False # True / False
+
+with st.sidebar:
+    pilihan = st.sidebar.radio(
+    "Debug Mode:",
+    options=[False, True])
+
+    debug_mode = pilihan
+    status_debug = f"Mode debug : {debug_mode}" 
+    st.code(status_debug, language="python")
 
 ############################# Set Kredensial #############################
 host=st.secrets["DB_HOST"]       
@@ -175,7 +183,7 @@ def run_task_grafik(question,prompt):
 
 def run_task_khusus(question,prompt):
     if debug_mode:
-        st.success("perintah khsusus")
+        st.success("perintah khusus")
     query = respon(question,prompt)
     try:
         df = pd.read_sql(query, db_connection)
@@ -280,7 +288,7 @@ if "masalah" not in st.session_state:
 # Sidebar with a button to delete chat history
 with st.sidebar:
     try:
-        if st.button("Delete Chat History"):
+        if st.button("Reset"):
             st.session_state.messages = []
             st.session_state.perintah = None
             save_chat_history([])
