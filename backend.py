@@ -3,16 +3,30 @@ import pymysql
 import streamlit as st
 import pandas as pd
 
-host=os.getenv("DB_HOST")       
-user=os.getenv("DB_USER")       
-password=os.getenv("DB_GEMBOK")   
-database=os.getenv("DB_NYA")
+#host=os.getenv("DB_HOST")       
+#user=os.getenv("DB_USER")       
+#password=os.getenv("DB_GEMBOK")   
+#database=os.getenv("DB_NYA")
 
+host=st.secrets["DB_HOST"]       
+user=st.secrets["DB_USER"]          
+password=st.secrets["DB_GEMBOK"] 
+database=st.secrets["DB_NYA"]
 
 conn = pymysql.connect(host=host, user=user, password=password, database=database)
 
 st.title("Main Back-end")
-st.subheader("**1. Daftar Tabel Database**")
+
+st.subheader("**1. Arsitektur Sistem**")
+st.image("arsitektur_trans.png", use_container_width=True)
+st.markdown(""" - ***Database*** menggunakan ***MySQL***
+            \n- ***Model Gemini*** menggunakan ***gemini-pro*** 
+            \n- ***UX/UI*** menggunakan ***Streamlit***
+            \n- ***Back-End*** menggunakan ***Python 3.11.7***
+            \n- ***Grafik*** menggunakan ***Libs Matplotlib & Seaborn***
+            """)
+
+st.subheader("**2. Daftar Tabel Database**")
 
 cursor = conn.cursor()
 cp = conn.cursor()
@@ -52,7 +66,7 @@ prompt_fk = '\n'.join([f"{item}" for item in for_k])
 conn.close()
 
 # Streamlit UI
-st.subheader("**2. Foreign Key**")
+st.subheader("**3. Foreign Key**")
 st.warning(prompt_fk)
 
 aturan = f"""
@@ -104,10 +118,10 @@ aturan = f"""
     \nHasil dari query SQL nya jangan sampai mengandung karakter ``` pada bagian awal dan akhir dari text keluaran
     """
 
-st.subheader("**3. Prompt Engineering**")
+st.subheader("**4. Prompt Engineering**")
 st.error(aturan)
 
-st.subheader("**4. Dataset**")
+st.subheader("**5. Dataset**")
 df = pd.read_csv('rouge.csv')
 st.markdown(f'''Dataset didapatkan dengan mencoba pertanyaan yang ada pada kolom ***questions*** 
         dengan aturan ***prompt*** pada poin 3 dan hasilnya adalah pada kolom ***query***. 
@@ -138,7 +152,7 @@ dfr = dfr.drop_duplicates()
 st.code(f'''#hapus duplikat jika ada\ndfr = dfr.drop_duplicates()\ndfr.shape\n(86, 3)''', 
         language="python")
 
-st.subheader("**5. Evaluasi Prompt Engineering**")
+st.subheader("**6. Evaluasi Prompt Engineering**")
 st.markdown(f'''Evaluasi aturan ***prompt engineering*** dilakukan menggunakan ***ROUGE***, 
             dimana ROUGE (Recall-Oriented Understudy for Gisting Evaluation) adalah sebuah metrik evaluasi 
             yang digunakan untuk mengukur kualitas hasil summarization (peringkasan teks) atau hasil 
