@@ -17,7 +17,6 @@ st.set_page_config(page_title="PNS BOT",
                    layout="wide")
 pg.run()
 
-st.sidebar.markdown("[Github](https://github.com/aprianz042/kepegai)")
 st.sidebar.text("Powered By:")
 # Footer di Sidebar menggunakan HTML dan CSS
 footer = """
@@ -45,5 +44,9 @@ footer = """
     <img src="https://upload.wikimedia.org/wikipedia/commons/1/15/Logo_Kementerian_Perhubungan_Indonesia_%28Kemenhub%29.png" alt="Kemenhub" width="50px" height="auto">
         <img src="https://dti.itb.ac.id/wp-content/uploads/2020/09/logo_itb_1024.png" alt="ITB" width="60px" height="auto">
 </div>
+<a href="https://github.com/aprianz042/kepegai" target="_blank" style="text-decoration: none;">
+    <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub Logo" width="20" style="vertical-align: middle; margin-right: 10px;">
+    <span style="vertical-align: middle;">GitHub Repository</span>
+</a>
 """
 st.sidebar.markdown(footer, unsafe_allow_html=True)
