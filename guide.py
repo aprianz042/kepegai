@@ -1,7 +1,7 @@
 import streamlit as st
 
 st.title("Prompt Guide")
-st.subheader("***Perintah khusus***")
+st.subheader("***Perintah khusus***", divider=True)
 st.markdown("***Perintah untuk menampilkan data terbatas pada database yang dimiliki (Private)***")
 st.code('''#contoh :
         \nBerapa jumlah pegawai yang beragama Islam?
@@ -12,7 +12,7 @@ st.code('''#contoh :
         \nTampilkan data pegawai yang berasal dari kota Bandung.
         ''')
 
-st.subheader("***Perintah membuat grafik***")
+st.subheader("***Perintah membuat grafik***", divider=True)
 st.markdown("***Perintah untuk membuat grafik data terbatas pada database yang dimiliki (Private)***")
 st.code('''#contoh :
         \nBuatkan grafik data pegawai berdasarkan pendidikan.
@@ -22,7 +22,7 @@ st.code('''#contoh :
         \nBuatkan grafik pegawai berdasarkan umur
         ''')
 
-st.subheader("***Perintah umum***")
+st.subheader("***Perintah umum***", divider=True)
 st.markdown("***Perintah untuk mendapatkan informasi umum tentang ASN/PNS di Indonesia yang dieksekusi langsung menggunakan Gemini***")
 st.code('''#contoh :
         \nBagaimana proses seleksi penerimaan PNS?
@@ -33,7 +33,7 @@ st.code('''#contoh :
         \nBagaimana cara PNS mengajukan cuti?
         ''')
 
-st.subheader("***Perintah membuat grafik dengan gemini (beta)***")
+st.subheader("***Perintah membuat grafik dengan gemini (beta)***", divider=True)
 st.markdown("***Perintah untuk membuat grafik data terbatas pada database yang dimiliki (Private), namun sepenuhnya di atur oleh gemini***")
 st.code('''#contoh :
         \nBuatkan grafik jumlah pegawai per status_kepegawaian dengan gemini
