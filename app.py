@@ -6,17 +6,20 @@ main_page = st.Page("main.py", title="🤖 Main App")
 knn = st.Page("knn.py", title="♻️ Prompt Classification")
 backend = st.Page("backend.py", title="⚙️ Back-End")
 guide = st.Page("guide.py", title="📔 Prompt Guide")
+link = st.sidebar.markdown("[Github](https://github.com/aprianz042/kepegai)")
 
 pg = st.navigation([main_page, 
                     knn,
                     backend,
-                    guide])
+                    guide, 
+                    link])
 
 st.set_page_config(page_title="PNS BOT", 
                    page_icon="🤖",
                    layout="wide")
 pg.run()
 
+st.sidebar.text("Powered By:")
 # Footer di Sidebar menggunakan HTML dan CSS
 footer = """
 <style>
@@ -45,4 +48,3 @@ footer = """
 </div>
 """
 st.sidebar.markdown(footer, unsafe_allow_html=True)
-st.sidebar.markdown("[Github](https://github.com/aprianz042/kepegai)")
