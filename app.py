@@ -1,6 +1,7 @@
 import streamlit as st
 
 #main_page = st.Page("chat.py", title="Main App", icon=":material/add_circle:")
+st.logo("logo.png", size="large")
 
 main_page = st.Page("main.py", title="🤖 Main App")
 knn = st.Page("knn.py", title="♻️ Prompt Classification")
