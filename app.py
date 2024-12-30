@@ -45,3 +45,4 @@ footer = """
 </div>
 """
 st.sidebar.markdown(footer, unsafe_allow_html=True)
+st.sidebar.markdown("[Github](https://github.com/aprianz042/kepegai)")
