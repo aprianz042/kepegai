@@ -21,7 +21,7 @@ with st.sidebar:
     options=[False, True])
 
     debug_mode = pilihan
-    status_debug = f"Mode debug : {debug_mode}" 
+    status_debug = f"Debug Mode: {debug_mode}" 
     st.code(status_debug, language="python")
 
 ############################# Set Kredensial #############################
