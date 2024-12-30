@@ -153,7 +153,7 @@ dfr = dfr.drop_duplicates()
 st.code(f'''#hapus duplikat jika ada\ndfr = dfr.drop_duplicates()\ndfr.shape\n(86, 3)''', 
         language="python")
 
-st.subheader("**6. Evaluasi Prompt Engineering**")
+st.subheader("**Evaluasi Prompt Engineering**", devider=True)
 st.markdown(f'''Evaluasi aturan ***prompt engineering*** dilakukan menggunakan ***ROUGE***, 
             dimana ROUGE (Recall-Oriented Understudy for Gisting Evaluation) adalah sebuah metrik evaluasi 
             yang digunakan untuk mengukur kualitas hasil summarization (peringkasan teks) atau hasil 
