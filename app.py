@@ -45,7 +45,6 @@ footer = """
         <img src="https://dti.itb.ac.id/wp-content/uploads/2020/09/logo_itb_1024.png" alt="ITB" width="60px" height="auto">
 </div>
 <a href="https://github.com/aprianz042/kepegai" target="_blank" style="text-decoration: none;">
-    <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub Logo" width="20" style="vertical-align: middle; margin-right: 10px;">
     <span style="vertical-align: middle;">GitHub Repository</span>
 </a>
 """
