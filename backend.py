@@ -13,11 +13,12 @@ user=st.secrets["DB_USER"]
 password=st.secrets["DB_GEMBOK"] 
 database=st.secrets["DB_NYA"]
 
+
 conn = pymysql.connect(host=host, user=user, password=password, database=database)
 
 st.title("Main Back-end")
 
-st.subheader("**1. Arsitektur Sistem**")
+st.subheader("**Arsitektur Sistem**", divider=True)
 st.image("arsitektur_trans.png", use_container_width=True)
 st.markdown(""" - ***Database*** menggunakan ***MySQL***
             \n- ***Model Gemini*** menggunakan ***gemini-pro*** 
@@ -26,7 +27,7 @@ st.markdown(""" - ***Database*** menggunakan ***MySQL***
             \n- ***Grafik*** menggunakan ***Libs Matplotlib & Seaborn***
             """)
 
-st.subheader("**2. Daftar Tabel Database**")
+st.subheader("**Daftar Tabel Database**", divider=True)
 
 cursor = conn.cursor()
 cp = conn.cursor()
@@ -66,7 +67,7 @@ prompt_fk = '\n'.join([f"{item}" for item in for_k])
 conn.close()
 
 # Streamlit UI
-st.subheader("**3. Foreign Key**")
+st.subheader("**Foreign Key**", divider=True)
 st.warning(prompt_fk)
 
 aturan = f"""
@@ -118,10 +119,10 @@ aturan = f"""
     \nHasil dari query SQL nya jangan sampai mengandung karakter ``` pada bagian awal dan akhir dari text keluaran
     """
 
-st.subheader("**4. Prompt Engineering**")
+st.subheader("**Prompt Engineering**", divider=True)
 st.error(aturan)
 
-st.subheader("**5. Dataset**")
+st.subheader("**Dataset**", divider=True)
 df = pd.read_csv('rouge.csv')
 st.markdown(f'''Dataset didapatkan dengan mencoba pertanyaan yang ada pada kolom ***questions*** 
         dengan aturan ***prompt*** pada poin 3 dan hasilnya adalah pada kolom ***query***. 
