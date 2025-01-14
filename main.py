@@ -343,6 +343,9 @@ aturan = [
 
     \nForeign Key:
     {prompt_fk}
+    
+    \nSesuaikan instruksi dengan melakukan sinonim field sesuai dengan skema database di atas, 
+    \nContohnya: siapa saja pegawai yang belum kawin, hasilnya menjadi siapa saja pegawai yang belum menikah
 
     Contoh instruksi:
     \n- Tampilkan data pegawai yang sedang Tugas Belajar?,
