@@ -88,7 +88,7 @@ st.write("Siap Perintah")
 
 ############################# Fungsi Utama #############################
 if "genai_model" not in st.session_state:
-    st.session_state["genai_model"] = genai.GenerativeModel('gemini-pro')
+    st.session_state["genai_model"] = genai.GenerativeModel('gemini-1.5-pro')
 
 def get_gemini_response(question, prompt):
     model = genai.GenerativeModel('gemini-pro')
